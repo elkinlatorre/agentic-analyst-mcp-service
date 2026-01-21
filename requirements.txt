@@ -1,0 +1,14 @@
+# --- CORE AGENTIC STACK ---
+langchain-core==0.3.29
+langgraph==0.2.60
+langchain-groq==0.2.3
+langchain-community==0.3.13
+
+# --- API & PROTOCOLS ---
+fastapi==0.115.6
+uvicorn==0.34.0
+mcp==1.0.0
+
+# --- UTILS ---
+pydantic==2.10.4
+python-dotenv==1.0.1

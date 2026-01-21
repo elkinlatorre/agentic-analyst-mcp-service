@@ -1,0 +1,21 @@
+# Bytes
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Environment Variables
+.env
+
+# IDE settings
+.idea/
+.vscode/
+
+# Project specific output
+output/
+
+# System
+.DS_Store
