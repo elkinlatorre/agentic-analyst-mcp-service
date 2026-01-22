@@ -1,5 +1,5 @@
 from langchain_core.tools import tool
-from app.schemas.tool_schemas import WebSearchSchema
+from app.schemas.workflow.tool_schemas import WebSearchSchema
 from langchain_community.tools.tavily_search import TavilySearchResults
 from dotenv import load_dotenv
 

@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from app.core.agent import AgentManager
-from app.schemas.agent_state import AgentState
+from app.schemas.workflow.agent_state import AgentState
 
 # Initialize our Manager
 manager = AgentManager()
@@ -27,7 +27,7 @@ def should_continue(state: AgentState):
     # If tool 'save_report_to_disk', force human approval
     for tool_call in last_message.tool_calls:
         if tool_call["name"] == "save_report_to_disk":
-            return "human_approval"  # Forzamos el paso por el nodo de pausa
+            return "human_approval"
 
     return "tools"
 

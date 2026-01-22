@@ -3,7 +3,7 @@ import yaml
 from pathlib import Path
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from app.schemas.agent_state import AgentState
+from app.schemas.workflow.agent_state import AgentState
 from langchain_core.messages import SystemMessage
 from app.tools.file_tools import save_report_to_disk
 from app.tools.search_tools import web_search_tool

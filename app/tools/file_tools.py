@@ -1,6 +1,6 @@
 import os
 from langchain_core.tools import tool
-from app.schemas.tool_schemas import WriteReportSchema
+from app.schemas.workflow.tool_schemas import WriteReportSchema
 
 
 @tool(args_schema=WriteReportSchema)
