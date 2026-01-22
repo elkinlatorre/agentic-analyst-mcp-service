@@ -1,5 +1,6 @@
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from app.core.agent import AgentManager
 from app.schemas.agent_state import AgentState
 
@@ -11,9 +12,7 @@ def should_continue(state: AgentState):
     """
     Conditional edge to determine if we should go to tools or finish.
     """
-
     # --- SAFETY GUARD: TOKEN LIMIT ---
-    # If we exceed 5000 tokens, we stop to prevent massive costs
     if state.get("total_tokens", 0) > 7000:
         print("!!! SAFETY ALERT: Token limit exceeded. Stopping agent.")
         return END
@@ -21,39 +20,69 @@ def should_continue(state: AgentState):
     messages = state['messages']
     last_message = messages[-1]
 
-    # If the LLM made a tool call, we move to the "tools" node
-    if last_message.tool_calls:
-        return "tools"
+    # If no tool has been call, agent finish
+    if not last_message.tool_calls:
+        return END
 
-    # Otherwise, we stop
-    return END
+    # If tool 'save_report_to_disk', force human approval
+    for tool_call in last_message.tool_calls:
+        if tool_call["name"] == "save_report_to_disk":
+            return "human_approval"  # Forzamos el paso por el nodo de pausa
+
+    return "tools"
+
+
+def human_approval(state: AgentState):
+    """
+    A 'ghost' node that does nothing, but serves as a breakpoint specifically for sensitive actions.
+    """
+    pass
 
 
 # 1. Define the Graph
 workflow = StateGraph(AgentState)
 
 # 2. Define the Nodes
-# 'agent' node: The brain (Manager.call_model)
 workflow.add_node("agent", manager.call_model)
-
-# 'tools' node: The hands (Executes the tools)
-tool_node = ToolNode(manager.tools)
-workflow.add_node("tools", tool_node)
+workflow.add_node("tools", ToolNode(manager.tools))
+workflow.add_node("human_approval", human_approval)
 
 # 3. Define the Edges
-# The entry point is the agent
 workflow.set_entry_point("agent")
 
-# After the agent, we decide if we go to tools or END
+# Agent decide: ¿End? ¿Tools? o ¿Human approval?
 workflow.add_conditional_edges(
     "agent",
     should_continue,
+    {
+        "tools": "tools",
+        "human_approval": "human_approval",
+        END: END
+    }
 )
 
-# After tools are executed, we ALWAYS go back to the agent
-# to let it "observe" the result and think again (Cycle)
+workflow.add_edge("human_approval", "tools")
 workflow.add_edge("tools", "agent")
 
-# 4. Compile the Graph
-# This is the final object we will call from our API
-app_graph = workflow.compile()
+# --- DATABASE CONNECTION MANAGEMENT ---
+# We create the saver instance here
+DB_PATH = "checkpoints.db"
+# This is the context manager
+saver_context = AsyncSqliteSaver.from_conn_string(DB_PATH)
+
+# We will define app_graph as None and compile it inside the lifespan
+app_graph = None
+
+async def initialize_graph():
+    """
+    Function to be called during FastAPI lifespan to correctly
+    initialize the graph with an active checkpointer.
+    """
+    global app_graph
+    # Entering the context manager to get the ACTUAL saver object
+    checkpointer = await saver_context.__aenter__()
+    app_graph = workflow.compile(
+        checkpointer=checkpointer,
+        interrupt_before=["human_approval"]
+    )
+    return app_graph

@@ -3,6 +3,7 @@ langchain-core==0.3.29
 langgraph==0.2.60
 langchain-groq==0.2.3
 langchain-community==0.3.13
+langgraph-checkpoint-sqlite==2.0.1
 
 # --- API & PROTOCOLS ---
 fastapi==0.115.6
@@ -12,3 +13,4 @@ mcp==1.0.0
 # --- UTILS ---
 pydantic==2.10.4
 python-dotenv==1.0.1
+aiosqlite==0.20.0
