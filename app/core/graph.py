@@ -3,15 +3,15 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from app.core.agent import AgentManager
 from app.schemas.workflow.agent_state import AgentState
-from app.core.mcp_manager import MCPManager
+from app.core.mcp_manager import MCPHubManager
 
-# 1. Instanciar managers (sin lógica de nodos aún)
+# 1. Managers instances
 manager = AgentManager()
-mcp_manager = MCPManager()
+mcp_hub = MCPHubManager()
 
 
 def should_continue(state: AgentState):
-    if state.get("total_tokens", 0) > 7000:
+    if state.get("total_tokens", 0) > 30000:
         return END
 
     messages = state['messages']
@@ -31,7 +31,7 @@ def human_approval(state: AgentState):
     pass
 
 
-# --- INFRAESTRUCTURA ---
+# --- INFRASTRUCTURE ---
 DB_PATH = "checkpoints.db"
 saver_context = AsyncSqliteSaver.from_conn_string(DB_PATH)
 app_graph = None
@@ -39,26 +39,26 @@ app_graph = None
 
 async def initialize_graph():
     """
-    Inicializa MCP, actualiza herramientas y compila el grafo dinámicamente.
+    It initializes MCP, updates the tools, and compiles the graph dynamically.
     """
     global app_graph
 
-    # 1. Conexión MCP
-    await mcp_manager.connect()
+    # 1. MCP Connection
+    await mcp_hub.connect()
 
-    # 2. Obtener herramientas remotas y actualizar el Manager
-    remote_tools = await mcp_manager.get_mcp_tools()
+    # 2. Get remote tools and update Manager
+    remote_tools = await mcp_hub.get_all_mcp_tools()
     manager.update_tools(remote_tools)
 
-    # 3. Definir el Grafo AHORA que tenemos todas las herramientas
+    # 3. Initilize graph
     workflow = StateGraph(AgentState)
 
-    # 4. Añadir Nodos
+    # 4. Adding Nodes
     workflow.add_node("agent", manager.call_model)
-    workflow.add_node("tools", ToolNode(manager.all_tools))  # Aquí ya van las 8 herramientas
+    workflow.add_node("tools", ToolNode(manager.all_tools))
     workflow.add_node("human_approval", human_approval)
 
-    # 5. Definir Flujo (Edges)
+    # 5. Edges
     workflow.set_entry_point("agent")
 
     workflow.add_conditional_edges(
@@ -74,7 +74,7 @@ async def initialize_graph():
     workflow.add_edge("human_approval", "tools")
     workflow.add_edge("tools", "agent")
 
-    # 6. Compilación con Checkpointer
+    # 6. Compile Checkpointer
     checkpointer = await saver_context.__aenter__()
     app_graph = workflow.compile(
         checkpointer=checkpointer,

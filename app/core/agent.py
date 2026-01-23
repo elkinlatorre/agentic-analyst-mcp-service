@@ -14,7 +14,7 @@ load_dotenv()
 class AgentManager:
     def __init__(self):
         self.llm = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model= "llama-3.1-8b-instant", # "llama-3.3-70b-versatile",
             temperature=0,
             api_key=os.getenv("GROQ_API_KEY")
         )
@@ -38,7 +38,7 @@ class AgentManager:
         return config['system_prompt']
 
     def call_model(self, state: AgentState):
-        MAX_TOKENS = 7000
+        MAX_TOKENS = 30000
         SAFE_MARGIN = 2000
 
         current_usage = state.get("total_tokens", 0)

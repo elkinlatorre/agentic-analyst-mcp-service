@@ -12,7 +12,7 @@ class AgentService:
 
     async def stream_chat(self, message: str, thread_id: Optional[str] = None) -> AsyncGenerator[str, None]:
         current_thread_id = thread_id or self.generate_thread_id()
-        config = {"configurable": {"thread_id": current_thread_id}}
+        config = {"configurable": {"thread_id": current_thread_id}, "recursion_limit": 25}
 
         inputs = {
             "messages": [HumanMessage(content=message)],

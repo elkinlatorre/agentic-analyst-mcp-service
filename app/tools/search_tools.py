@@ -13,7 +13,7 @@ tavily_tool = TavilySearchResults(k=3)
 @tool(args_schema=WebSearchSchema)
 def web_search_tool(query: str) -> str:
     """
-    Search the internet for real-time information, news, or specific facts.
+    Search the internet for real-time information with Tavily, news, or specific facts.
     Use this tool when the information is not in your internal knowledge
     or when you need up-to-date data.
     """

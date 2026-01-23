@@ -1,0 +1,11 @@
+mcp_servers:
+  sqlite:
+    command: "C:/PythonPersonalCode/AgenticAiCourse/AgenticAnalyst/venv/Scripts/mcp-server-sqlite.exe"
+    args:
+      - "--db-path"
+      - "C:/PythonPersonalCode/AgenticAiCourse/AgenticAnalyst/external_data.db"
+
+  fetch:
+    command: "uvx"
+    args:
+      - "mcp-server-fetch"

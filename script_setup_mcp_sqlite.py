@@ -15,20 +15,20 @@ def create_test_db():
                        KEY,
                        name
                        TEXT,
-                       price
-                       REAL,
+                       price_in_cents
+                       INTEGER,
                        stock
                        INTEGER
                    )
                    ''')
 
     products = [
-        ('Laptop Pro', 1200.50, 10),
-        ('Monitor 4K', 350.00, 25),
-        ('Mechanical Keyboard', 89.99, 50)
+        ('Laptop Pro', 120050, 10),
+        ('Monitor 4K', 35000, 25),
+        ('Mechanical Keyboard', 8999, 50)
     ]
 
-    cursor.executemany('INSERT INTO products (name, price, stock) VALUES (?, ?, ?)', products)
+    cursor.executemany('INSERT INTO products (name, price_in_cents, stock) VALUES (?, ?, ?)', products)
     conn.commit()
     conn.close()
     print("Database 'external_data.db' created with test data.")
