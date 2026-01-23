@@ -18,12 +18,17 @@ class AgentManager:
             temperature=0,
             api_key=os.getenv("GROQ_API_KEY")
         )
-        # Define the tools available for the agent
-        self.tools = [save_report_to_disk, web_search_tool]
-        # Tool Binding: This tells the LLM about the tools
-        self.llm_with_tools = self.llm.bind_tools(self.tools)
+        self.static_tools = [save_report_to_disk, web_search_tool]
+        self.all_tools = self.static_tools
+        self.llm_with_tools = self.llm.bind_tools(self.all_tools)
         # Load the prompt from YAML during initialization
         self.system_prompt = self._load_prompt()
+
+    def update_tools(self, mcp_tools: list):
+        """Updates the LLM binding with both local and MCP tools."""
+        self.all_tools = self.static_tools + mcp_tools
+        self.llm_with_tools = self.llm.bind_tools(self.all_tools)
+        print(f"--- [DEBUG] Agent tools updated. Total: {len(self.all_tools)} ---")
 
     def _load_prompt(self) -> str:
         """Loads the system prompt from a YAML file."""

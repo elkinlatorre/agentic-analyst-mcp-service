@@ -8,8 +8,12 @@ def save_report_to_disk(filename: str, content: str) -> str:
     """
     Saves a professional report to the local 'output' directory.
     Use this tool when the user asks to save results or generate a file.
+    IMPORTANT: The 'content' argument must be the FINAL, complete text with all
+    variables and data points already populated. Do not send templates or placeholders.
     """
     try:
+        print(f"--- [DEBUG] Tool save_report_to_disk received: {content} ---")
+
         # Create output directory if it doesn't exist
         output_dir = "output"
         if not os.path.exists(output_dir):

@@ -69,7 +69,8 @@ async def approve_endpoint(request: ApprovalRequest):
         return ApprovalResponse(
             status="success",
             thread_id=request.thread_id,
-            agent_response=result["agent_response"]
+            agent_response=result["agent_response"],
+            message="Action approved and executed successfully."
         )
     except HTTPException as he:
         # Re-raise known HTTP exceptions
