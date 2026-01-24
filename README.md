@@ -1,7 +1,7 @@
 # The Autonomous Market Analyst
 
 ## Overview
-This project demonstrates an advanced agentic AI use case: **"The Autonomous Market Analyst"**. It is a robust portfolio piece designed to showcase the orchestration of multiple MCP (Model Context Protocol) servers and local tools to perform end-to-end market research, data extraction, and reporting.
+Agentic AI use case: **"The Autonomous Market Analyst"**. It is designed to showcase the orchestration of multiple MCP (Model Context Protocol) servers and local tools to perform end-to-end market research, data extraction, and reporting.
 
 Unlike simple search bots, this agent acts as a diligent analyst. It autonomously:
 1.  Identifies relevant data sources.
@@ -41,7 +41,7 @@ flowchart TD
     subgraph "Local System"
         Orchestrator -- "Write Report" --> FileTool[File Output Tool]
         FileTool -.-> |"Requires Approval"| HumanCheck{Human Validation}
-        HumanCheck -->|Approved| Disk[Local File System (output/)]
+        HumanCheck -->|Approved| Disk --> LocalFileSystem[output/]
     end
 ```
 
