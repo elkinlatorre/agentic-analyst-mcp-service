@@ -19,7 +19,9 @@ def web_search_tool(query: str) -> str:
     """
     # This is a wrapper to ensure it follows our architectural patterns
     try:
+        print(f"Web search: {query}")
         results = tavily_tool.invoke({"query": query})
         return str(results)
     except Exception as e:
+        print(f"Search failed: {str(e)}")
         return f"Search failed: {str(e)}"

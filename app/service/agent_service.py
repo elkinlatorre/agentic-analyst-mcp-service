@@ -1,9 +1,9 @@
 import uuid
 import json
+
 from typing import AsyncGenerator, Optional
 from langchain_core.messages import HumanMessage
 from app.core import graph  # Import the module to access the global app_graph
-
 
 class AgentService:
     @staticmethod
@@ -11,6 +11,7 @@ class AgentService:
         return str(uuid.uuid4())
 
     async def stream_chat(self, message: str, thread_id: Optional[str] = None) -> AsyncGenerator[str, None]:
+        print(f"stream_chat: {thread_id}")
         current_thread_id = thread_id or self.generate_thread_id()
         config = {"configurable": {"thread_id": current_thread_id}, "recursion_limit": 25}
 
@@ -39,6 +40,7 @@ class AgentService:
             })
 
     async def approve_agent_action(self, thread_id: str) -> dict:
+        print(f"approve_agent_action: {thread_id}")
         config = {"configurable": {"thread_id": thread_id}}
 
         snapshot = await graph.app_graph.aget_state(config)

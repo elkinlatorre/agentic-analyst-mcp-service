@@ -1,7 +1,7 @@
 import os
+
 from langchain_core.tools import tool
 from app.schemas.workflow.tool_schemas import WriteReportSchema
-
 
 @tool(args_schema=WriteReportSchema)
 def save_report_to_disk(filename: str, content: str) -> str:
@@ -12,8 +12,7 @@ def save_report_to_disk(filename: str, content: str) -> str:
     variables and data points already populated. Do not send templates or placeholders.
     """
     try:
-        print(f"--- [DEBUG] Tool save_report_to_disk received: {content} ---")
-
+        print(f"--- Tool save_report_to_disk received: {content} ---")
         # Create output directory if it doesn't exist
         output_dir = "output"
         if not os.path.exists(output_dir):
@@ -23,7 +22,8 @@ def save_report_to_disk(filename: str, content: str) -> str:
 
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
-
+        print(f"Saving report to {filename}")
         return f"Successfully saved report to {file_path}"
     except Exception as e:
+        print(f"Error saving report: {str(e)}")
         return f"Error saving report: {str(e)}"

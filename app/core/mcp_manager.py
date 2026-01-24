@@ -9,11 +9,13 @@ from langchain_core.tools import StructuredTool
 from contextlib import AsyncExitStack
 from pydantic import create_model
 from app.core.security import SQLSecurityValidator
-from pydantic import Field #
+from pydantic import Field
+
 
 class MCPHubManager:
     def __init__(self):
         self.exit_stack = AsyncExitStack()
+        self.session_configs: Dict[ClientSession, dict] = {}
         self.sessions: List[ClientSession] = []
         self.config = self._load_config()
 
@@ -43,62 +45,49 @@ class MCPHubManager:
                 await session.initialize()
                 self.sessions.append(session)
                 print(f"--- [MCP HUB] Connected to {name} ---")
+                self.session_configs[session] = settings
             except Exception as e:
                 print(f"--- [MCP HUB ERROR] Failed to connect to {name}: {e} ---")
+
+    async def _mcp_tool_executor(self, session: ClientSession, name: str, **kwargs):
+        """Validador de seguridad y ejecutor."""
+        query = kwargs.get("query") or kwargs.get("sql")
+        if query and not SQLSecurityValidator.validate_query(str(query)):
+            return SQLSecurityValidator.get_security_error_message()
+
+        result = await session.call_tool(name, kwargs)
+        return "\n".join([c.text for c in result.content if hasattr(c, 'text')])
 
     async def get_all_mcp_tools(self) -> list:
         all_langchain_tools = []
 
-        # Metadata we want the model to know WITHOUT putting it in the system prompt
-        db_context = (
-            "Target table: 'products'. "
-            "Columns: [id (INT), name (TEXT), price_in_cents (INT), stock (INT)]. "
-            "Note: price_in_cents is (dollars * 100)."
-        )
-
         for session in self.sessions:
+            # Recuperamos la metadata específica de este servidor desde el YAML
+            server_settings = self.session_configs.get(session, {})
+            custom_context = server_settings.get("custom_metadata", {}).get("db_context", "")
+
             mcp_tools = await session.list_tools()
-
             for tool in mcp_tools.tools:
-                name = tool.name
-                description = tool.description
-                input_schema = tool.inputSchema
-                properties = tool.inputSchema.get("properties", {})
-
-                # Here is the trick: We inject the context into the Pydantic field description
+                # Inyectamos el contexto solo si la herramienta parece ser de SQL o si es relevante
                 fields = {}
-                for k in properties.keys():
-                    field_desc = properties[k].get("description", "")
-                    if "query" in k or "sql" in k:
-                        # We append the DB context to the argument's own description
-                        field_desc = f"{field_desc}. {db_context}".strip()
+                for k, v in tool.inputSchema.get("properties", {}).items():
+                    desc = v.get("description", "")
+                    if custom_context and any(kw in k.lower() for kw in ["query", "sql", "url"]):
+                        desc = f"{desc}. {custom_context}"
+                    fields[k] = (object, Field(..., description=desc))
 
-                    fields[k] = (object, Field(..., description=field_desc))
+                args_model = create_model(f"{tool.name}Args", **fields)
 
-                DynamicArgsModel = create_model(f"{name}Args", **fields)
-
-                async def tool_wrapper(name=name, session=session, **kwargs):
-
-                    # 1. Extract query/sql from kwargs
-                    query = kwargs.get("query") or kwargs.get("sql")
-
-                    # 2. Security Validation
-                    if query and not SQLSecurityValidator.validate_query(str(query)):
-                        return SQLSecurityValidator.get_security_error_message()
-
-                    # 3. Execution
-                    result = await session.call_tool(name, kwargs)
-                    combined_output = "\n".join(
-                        [content.text for content in result.content if hasattr(content, 'text')]
-                    )
-                    return combined_output
+                # Definimos el runner con closure para capturar la sesión correcta
+                async def runner(tool_name=tool.name, tool_session=session, **kwargs):
+                    return await self._mcp_tool_executor(tool_session, tool_name, **kwargs)
 
                 all_langchain_tools.append(
                     StructuredTool.from_function(
-                        name=name,
-                        description=description,
-                        coroutine=tool_wrapper,
-                        args_schema=DynamicArgsModel
+                        name=tool.name,
+                        description=tool.description,
+                        coroutine=runner,
+                        args_schema=args_model
                     )
                 )
         return all_langchain_tools

@@ -4,8 +4,16 @@ mcp_servers:
     args:
       - "--db-path"
       - "C:/PythonPersonalCode/AgenticAiCourse/AgenticAnalyst/external_data.db"
+    custom_metadata:
+      db_context: "Target table: 'products'. Columns: [id, name, price_in_cents, stock]. REQUIRED: Use the EXACT price found in previous steps. Calculate price_in_cents = (price_in_dollars * 100). Do not use placeholder values."
 
   fetch:
     command: "uvx"
-    args:
-      - "mcp-server-fetch"
+    args: [ "mcp-server-fetch" ]
+    custom_metadata:
+      db_context: >
+        Target table: 'products'. 
+        Required mapping: 
+        - name: Product name from search.
+        - price_in_cents: Take the dollar price found (e.g., 1999.99), remove symbols, and multiply by 100 (e.g., 199999). 
+        STRICT RULE: Use the data from the previous search tool only. Never invent numbers.
