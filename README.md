@@ -121,7 +121,7 @@ AgenticAnalyst/
     **Example Payload**:
     ```json
     {
-      "message": "Busca en Tavily el precio de la Nvidia RTX 5090, usa fetch para leer el primer artículo que encuentres, guarda el precio en nuestra base de datos de SQLite y escribe un archivo con el producto y el precio"
+      "message": "Search Tavily for the price of the Nvidia RTX 5090, use fetch to read the first article you find, save the price to our SQLite database, and write a file containing the product and the price."
     }
     ```
     
